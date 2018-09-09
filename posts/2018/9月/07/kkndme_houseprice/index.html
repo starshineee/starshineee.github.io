@@ -161,7 +161,7 @@
       repo: 'starshineee.github.io',
       owner: 'starshineee',
       admin: ['starshineee'],
-      id: location.pathname.substr(0, 50),
+      id: md5(location.pathname),
       distractionFreeMode: false
     });
     gitalk.render('gitalk-container');
