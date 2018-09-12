@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="chinese (simplified)">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>天涯 kkndme 大神论房价 | Starshineee 的个人博客
+</title>
+  <link rel="canonical" href="https://starshineee.github.io/posts/pa-chong/IEEE_article_crawl/index.html">
+
+
+  <link rel="stylesheet" href="https://starshineee.github.io/theme/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://starshineee.github.io/theme/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://starshineee.github.io/theme/css/pygments/default.min.css">
+  <link rel="stylesheet" href="https://starshineee.github.io/theme/css/theme.css">
+
+
+<meta name="description" content="一个爬虫，能根据 doi 对 IEEE 上的论文进行爬取。需要使用者处于能下载论文的网络中。">
+  <script>
+    (function(i, s, o, g, r, a, m) {
+      i['GoogleAnalyticsObject'] = r;
+      i[r] = i[r] || function() {
+        (i[r].q = i[r].q || []).push(arguments)
+      }, i[r].l = 1 * new Date();
+      a = s.createElement(o);
+      a.async = 1;
+      a.src = g;
+      m = s.getElementsByTagName(o)[0];
+      m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-124959139-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+
+
+</head>
+
+<body>
+  <header class="header">
+    <div class="container">
+<div class="row">
+  <div class="col-sm-12">
+    <h1 class="title"><a href="https://starshineee.github.io/">Starshineee 的个人博客</a></h1>
+      <ul class="list-inline">
+          <li class="list-inline-item"><a href="https://github.com/starshineee" target="_blank">我的Github</a></li>
+      </ul>
+  </div>
+</div>    </div>
+  </header>
+
+  <div class="main">
+    <div class="container">
+      <h1>天涯 kkndme 大神论房价
+</h1>
+      <hr>
+<article class="article">
+  <header>
+    <ul class="list-inline">
+      <li class="list-inline-item text-muted" title="2018-09-12T22:39:05.273702+08:00">
+        <i class="fa fa-clock-o"></i>
+        周三 12 九月 2018
+      </li>
+      <li class="list-inline-item">
+        <i class="fa fa-folder-open-o"></i>
+        <a href="https://starshineee.github.io/category/pa-chong.html">爬虫</a>
+      </li>
+      <li class="list-inline-item">
+        <i class="fa fa-user-o"></i>
+        <a href="https://starshineee.github.io/author/starshineee.html">starshineee</a>      </li>
+      <li class="list-inline-item">
+        <i class="fa fa-files-o"></i>
+        <a href="https://starshineee.github.io/tag/pa-chong.html">#爬虫</a>,         <a href="https://starshineee.github.io/tag/ieee.html">#IEEE</a>      </li>
+    </ul>
+  </header>
+  <div class="content">
+    <h1>Motivation</h1>
+<p>又一次拿到了一列论文的信息，需要从 IEEE 上批量下载。然而大家知道，直接一个个地手动下载是一件很痛苦的事情，于是本人便写了这个爬虫，用于根据 doi 对论文自动下载。一个难点是 IEEE 采用了 ajax 加载页面的方法来防爬虫，如何解决这种问题是本文的主要关注点。</p>
+<h1>爬虫思路</h1>
+<p>首先需要对 IEEE 网页进行分析，随便打开一个论文可以发现，其中每个论文的 doi 和 article number 是唯一的，而通过 article number 能够得到该论文的下载链接，如下图所示</p>
+<p><img alt="article number in IEEE" height="50%" src="{filename}/images/IEEEArcNumber.png" width="60%"></p>
+<p>然而一些情况下我们是没有 article number 的，比如利用 IEEE 页面上的 Export 导出论文信息时，文件里面只会含一些论文名、doi 等信息。那么问题就是如何才能根据 doi 来获取 article number。我们在 IEEE 搜索栏旁边选择 Advanced Search，然后选择根据 doi 来搜索论文，这时候就能得到我们想要的论文。观察 url 栏，这就是我们获取 article number 需要访问的链接。</p>
+<p><img alt="article number in IEEE" height="50%" src="{filename}/images/IEEE_crawl/doi2ArcNum.png" width="60%"></p>
+<p>看起来似乎一切都很顺利，我们用 python 访问试试看</p>
+<p><img alt="url get nothing" height="50%" src="{filename}/images/IEEE_crawl/ajaxResult.png" width="60%"></p>
+<p>咦，为什么什么明明页面上有，却什么都没得到呢？再刷新一下网页，我们发现我们感兴趣的论文信息那部分是其它页面显示后过了一阵才刷出来的。这是因为 IEEE 用了 ajax 慢加载的方式来防止爬虫爬取页面，直接访问链接并不能得到任何东西。</p>
+<p>对于这种问题我们可以使用工具 <a href="https://selenium-python.readthedocs.io">selenium</a> 来解决。selenium 是一种自动化测试的工具，可以控制浏览器来自动完成一些动作，在这里正好能成为 ajax 防爬的克星。</p>
+<div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">selenium</span> <span class="kn">import</span> <span class="n">webdriver</span>
+
+<span class="n">browser</span> <span class="o">=</span> <span class="n">webdriver</span><span class="o">.</span><span class="n">Chrome</span><span class="p">(</span><span class="s1">&#39;C:\Program Files (x86)Google\Chrome\Application\chromedriver.exe&#39;</span><span class="p">)</span> <span class="c1"># 此处改为你自己的 chromedriver 路径</span>
+
+<span class="n">urlBase</span><span class="o">=</span><span class="s1">&#39;https://ieeexplore.ieee.org/search/searchresult.jsp?action=search&amp;newsearch=true&amp;searchField=Search_All&amp;matchBoolean=true&amp;queryText=&quot;DOI&quot;:&#39;</span>
+<span class="n">url</span><span class="o">=</span><span class="n">urlBase</span><span class="o">+</span><span class="n">doi</span>
+<span class="n">browser</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+<span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">link_list</span><span class="o">=</span><span class="n">browser</span><span class="o">.</span><span class="n">find_element_by_xpath</span><span class="p">(</span><span class="s2">&quot;//*[@data-artnum]&quot;</span><span class="p">)</span>
+</pre></div>
+
+
+<p>这样 selenium 就会自动打开 chrome 从而获得 article number，你可以看到你的 chrome 在不停地加载新的页面。</p>
+<p>但是当我们拿到 article number 后，直接 request "https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&amp;arnumber=7113786" 依然无法获得 想要的 PDF 文件。这依然是由于 IEEE 的防爬策略。事实上，访问这个 url 返回的是一个页面。观察这个返回值的结构，我们可以看到</p>
+<p><img alt="real url to pdf" height="50%" src="{filename}/images/IEEE_crawl/realPdfUrl.png" width="60%"></p>
+<p>试着访问这个链接，发现这个就是通向 pdf 的链接，成功了！</p>
+<h1>具体代码</h1>
+<p>假如你看到了这里，那说明你对于技术有一定的兴趣。爬取页面的大致思路如上文所述，具体的代码要复杂一些，可以到我的<a href="https://github.com/starshineee/crawl-IEEE-article">github页面</a>上去下载。</p>
+<p>本博客不定期更新，主要内容为爬虫、大数据、各种小工具等技术问题，欢迎到 github 上 follow 我。</p>
+  </div>
+
+  <div id="container"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    var gitment = new Gitment({
+      id: decodeURI(window.location.pathname),
+      owner: 'starshineee',
+      repo: 'starshineee.github.io',
+      oauth: {
+        client_id: '83ce4a7931514df054dc',
+        client_secret: 'eedf908158dfdfd50b796349175b1ce0384f662c',
+      },
+    })
+    gitment.render('container')
+  </script>
+
+
+</article>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+<div class="row">
+  <ul class="col-sm-6 list-inline">
+      <li class="list-inline-item"><a href="https://starshineee.github.io/authors.html">Authors</a></li>
+    <li class="list-inline-item"><a href="https://starshineee.github.io/archives.html">Archives</a></li>
+    <li class="list-inline-item"><a href="https://starshineee.github.io/categories.html">Categories</a></li>
+      <li class="list-inline-item"><a href="https://starshineee.github.io/tags.html">Tags</a></li>
+  </ul>
+  <!-- <p class="col-sm-6 text-sm-right text-muted">
+    Generated by <a href="https://github.com/getpelican/pelican" target="_blank">Pelican</a>
+    / <a href="https://github.com/nairobilug/pelican-alchemy" target="_blank">&#x2728;</a>
+  </p> -->
+</div>    </div>
+  </footer>
+</body>
+
+</html>
