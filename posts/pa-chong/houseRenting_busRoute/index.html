@@ -77,12 +77,12 @@
   <div class="content">
     <h1>Motivation</h1>
 <p>前一阶段有租房的需求，但我希望在一些特定的班车线路附近租到价位合适的房子。在将一些租房信息爬取下来之后，我利用高德地图提供的 API 将租房点与班车线路直观地显示在了地图中，如下图所示。</p>
-<p><img alt="house_renting map" height="50%" src="https://starshineee.github.io/images/houseRentingMap.PNG" width="60%">
-使用者可以通过修改 bus.txt 来自定义自己所需的班车线路。图中绿线表示班车线路的一个示例，蓝点表示出租房子的小区。把鼠标移到小蓝点上可以看到出租房子的价格、面积等信息。</p>
+<p><img alt="house_renting map" height="50%" src="https://starshineee.github.io/images/houseRentingMap.PNG" width="60%"></p>
+<p>使用者可以通过修改 bus.txt 来自定义自己所需的班车线路。图中绿线表示班车线路的一个示例，蓝点表示出租房子的小区。把鼠标移到小蓝点上可以看到出租房子的价格、面积等信息。</p>
 <h1>爬虫思路</h1>
-<p>对于链家页面的爬取较为容易。首先打开链家租房页面并选择筛选条件，如下图可看到对应的 url 链接遵循着较强的规律。
-<img alt="lianjia page" height="50%" src="https://starshineee.github.io/images/lianjia.PNG" width="60%">
-再利用 F12 可以看到我们需要的信息都在特定的标签内，于是我们可以通过下列代码将信息爬取并放入 csv 文件中。</p>
+<p>对于链家页面的爬取较为容易。首先打开链家租房页面并选择筛选条件，如下图可看到对应的 url 链接遵循着较强的规律。</p>
+<p><img alt="lianjia page" height="50%" src="https://starshineee.github.io/images/lianjia.PNG" width="60%"></p>
+<p>再利用 F12 可以看到我们需要的信息都在特定的标签内，于是我们可以通过下列代码将信息爬取并放入 csv 文件中。</p>
 <div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">page</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pageNum</span><span class="p">):</span>
     <span class="n">html</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s1">&#39;https://sh.lianjia.com/zufang/pudong/pg{}rp2rp3/&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">page</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span><span class="o">.</span><span class="n">content</span>
@@ -110,78 +110,79 @@
 
 <p>然后，</p>
 <ol>
-<li>利用 JS 脚本新建 Map 对象，并设置属性</li>
-</ol>
-<div class="highlight"><pre><span></span><span class="kd">var</span> <span class="nx">map</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AMap</span><span class="p">.</span><span class="nx">Map</span><span class="p">(</span><span class="s2">&quot;container&quot;</span><span class="p">,</span> <span class="p">{</span>
-        <span class="nx">resizeEnable</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
-        <span class="nx">zoomEnable</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
-        <span class="nx">center</span><span class="o">:</span> <span class="p">[</span><span class="mf">121.586883</span><span class="p">,</span> <span class="mf">31.197304</span><span class="p">],</span>
-        <span class="nx">zoom</span><span class="o">:</span> <span class="mi">13</span>
-    <span class="p">});</span>
+<li>
+<p>利用 JS 脚本新建 Map 对象，并设置属性</p>
+<p><code>js
+var map = new AMap.Map("container", {
+        resizeEnable: true,
+        zoomEnable: true,
+        center: [121.586883, 31.197304],
+        zoom: 13
+    });</code></p>
+</li>
+<li>
+<p>利用 API，通过链家上爬取的小区名字得到其坐标位置，并以点的形式显示到地图上。</p>
+<p>```js
+var geocoder = new AMap.Geocoder({
+                city: "上海",
+                radius: 1500
+            });
+geocoder.getLocation(address, function (status, result) {
+    if (status === "complete" &amp;&amp; result.info === 'OK') {
+        var geocode = result.geocodes[0];</p>
+<div class="highlight"><pre><span></span>    <span class="nt">rentMarker</span> <span class="o">=</span> <span class="nt">new</span> <span class="nt">AMap</span><span class="p">.</span><span class="nc">Marker</span><span class="o">(</span><span class="p">{</span>
+        <span class="n">map</span><span class="p">:</span> <span class="n">map</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">:</span> <span class="n">address</span><span class="o">+</span><span class="s1">&#39;\n&#39;</span><span class="o">+</span><span class="n">houseInfo</span><span class="p">,</span>
+        <span class="kc">icon</span><span class="o">:</span> <span class="s1">&#39;http://webapi.amap.com/theme/v1.3/markers/n/mark_b.png&#39;</span><span class="p">,</span>
+        <span class="k">position</span><span class="o">:</span> <span class="cp">[</span><span class="nx">geocode.location.getLng</span><span class="p">(),</span> <span class="nx">geocode.location.getLat</span><span class="p">()</span><span class="cp">]</span>
+    <span class="p">}</span><span class="o">);</span>
+    <span class="nt">rentMarkerArray</span><span class="p">.</span><span class="nc">push</span><span class="o">(</span><span class="nt">rentMarker</span><span class="o">);</span>
+    <span class="nt">rentMarker</span><span class="p">.</span><span class="nc">on</span><span class="o">(</span><span class="s1">&#39;click&#39;</span><span class="o">,</span> <span class="nt">function</span> <span class="o">(</span><span class="nt">e</span><span class="o">)</span> <span class="p">{</span>
+        <span class="err">window.open(&quot;</span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">sh</span><span class="o">.</span><span class="n">lianjia</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">zufang</span><span class="o">/</span><span class="n">rs</span><span class="err">&quot;</span><span class="o">+</span><span class="n">address</span><span class="p">);</span>
+    <span class="p">}</span><span class="o">);</span>
+<span class="err">}</span>
 </pre></div>
 
 
-<ol>
-<li>利用 API，通过链家上爬取的小区名字得到其坐标位置，并以点的形式显示到地图上。</li>
-</ol>
-<div class="highlight"><pre><span></span><span class="kd">var</span> <span class="nx">geocoder</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AMap</span><span class="p">.</span><span class="nx">Geocoder</span><span class="p">({</span>
-                <span class="nx">city</span><span class="o">:</span> <span class="s2">&quot;上海&quot;</span><span class="p">,</span>
-                <span class="nx">radius</span><span class="o">:</span> <span class="mi">1500</span>
-            <span class="p">});</span>
-<span class="nx">geocoder</span><span class="p">.</span><span class="nx">getLocation</span><span class="p">(</span><span class="nx">address</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">status</span><span class="p">,</span> <span class="nx">result</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">if</span> <span class="p">(</span><span class="nx">status</span> <span class="o">===</span> <span class="s2">&quot;complete&quot;</span> <span class="o">&amp;&amp;</span> <span class="nx">result</span><span class="p">.</span><span class="nx">info</span> <span class="o">===</span> <span class="s1">&#39;OK&#39;</span><span class="p">)</span> <span class="p">{</span>
-        <span class="kd">var</span> <span class="nx">geocode</span> <span class="o">=</span> <span class="nx">result</span><span class="p">.</span><span class="nx">geocodes</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+<p>})
+```</p>
+</li>
+<li>
+<p>根据自定义的班车各个站点，即 bus.txt，在地图上显示出其线路。</p>
+<p>```js
+function loadBusRouteByFile(fileName) {
+            delBusRoute();
+            var bus_routes = new Set();
+            $.get(fileName, function (data) {
+                data = data.split("\n");
+                data.forEach(function (item, index) {
+                    bus_routes.add(item);
+                });</p>
+<div class="highlight"><pre><span></span>    <span class="nt">bus_routes</span><span class="p">.</span><span class="nc">forEach</span><span class="o">(</span><span class="nt">function</span> <span class="o">(</span><span class="nt">route</span><span class="o">,</span> <span class="nt">index</span><span class="o">)</span> <span class="p">{</span>
+        <span class="err">var</span> <span class="err">rou</span> <span class="err">=</span> <span class="err">route.split(&#39;，&#39;)</span><span class="p">;</span>
+        <span class="err">var</span> <span class="err">driving</span> <span class="err">=</span> <span class="err">new</span> <span class="err">AMap.Driving({</span>
+            <span class="n">map</span><span class="p">:</span> <span class="n">map</span><span class="p">,</span>
+            <span class="o">//</span> <span class="n">outlineColor</span><span class="o">:</span><span class="s2">&quot;red&quot;</span><span class="p">,</span>
+        <span class="p">}</span><span class="o">);</span>
 
-        <span class="nx">rentMarker</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AMap</span><span class="p">.</span><span class="nx">Marker</span><span class="p">({</span>
-            <span class="nx">map</span><span class="o">:</span> <span class="nx">map</span><span class="p">,</span>
-            <span class="nx">title</span><span class="o">:</span> <span class="nx">address</span><span class="o">+</span><span class="s1">&#39;\n&#39;</span><span class="o">+</span><span class="nx">houseInfo</span><span class="p">,</span>
-            <span class="nx">icon</span><span class="o">:</span> <span class="s1">&#39;http://webapi.amap.com/theme/v1.3/markers/n/mark_b.png&#39;</span><span class="p">,</span>
-            <span class="nx">position</span><span class="o">:</span> <span class="p">[</span><span class="nx">geocode</span><span class="p">.</span><span class="nx">location</span><span class="p">.</span><span class="nx">getLng</span><span class="p">(),</span> <span class="nx">geocode</span><span class="p">.</span><span class="nx">location</span><span class="p">.</span><span class="nx">getLat</span><span class="p">()]</span>
-        <span class="p">});</span>
-        <span class="nx">rentMarkerArray</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">rentMarker</span><span class="p">);</span>
-        <span class="nx">rentMarker</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;click&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nb">window</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="s2">&quot;https://sh.lianjia.com/zufang/rs&quot;</span><span class="o">+</span><span class="nx">address</span><span class="p">);</span>
-        <span class="p">});</span>
-    <span class="p">}</span>
-
-<span class="p">})</span>
+        <span class="nt">var</span> <span class="nt">points</span><span class="o">=</span><span class="cp">[]</span><span class="o">;</span>
+        <span class="nt">rou</span><span class="p">.</span><span class="nc">forEach</span><span class="o">(</span><span class="nt">function</span><span class="o">(</span><span class="nt">item</span><span class="o">,</span><span class="nt">index</span><span class="o">)</span><span class="p">{</span>
+            <span class="err">if(index){</span>
+                <span class="err">points.push({</span><span class="n">keyword</span><span class="p">:</span><span class="n">item</span><span class="p">,</span><span class="n">city</span><span class="o">:</span><span class="s2">&quot;上海&quot;</span><span class="p">}</span><span class="o">);</span>
+            <span class="err">}</span>
+        <span class="err">}</span><span class="o">);</span>
+        <span class="nt">p</span><span class="p">.</span><span class="nc">push</span><span class="o">(</span><span class="nt">points</span><span class="o">);</span>
+        <span class="nt">driving</span><span class="p">.</span><span class="nc">search</span><span class="o">(</span><span class="nt">points</span><span class="o">);</span>
+        <span class="nt">busRouteArray</span><span class="p">.</span><span class="nc">push</span><span class="o">(</span><span class="nt">driving</span><span class="o">);</span>
+    <span class="err">}</span><span class="o">);</span>
+<span class="err">}</span><span class="o">);</span>
 </pre></div>
 
 
-<ol>
-<li>根据自定义的班车各个站点，即 bus.txt，在地图上显示出其线路。</li>
+<p>}
+```</p>
+</li>
 </ol>
-<div class="highlight"><pre><span></span><span class="kd">function</span> <span class="nx">loadBusRouteByFile</span><span class="p">(</span><span class="nx">fileName</span><span class="p">)</span> <span class="p">{</span>
-            <span class="nx">delBusRoute</span><span class="p">();</span>
-            <span class="kd">var</span> <span class="nx">bus_routes</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Set</span><span class="p">();</span>
-            <span class="nx">$</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">fileName</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
-                <span class="nx">data</span> <span class="o">=</span> <span class="nx">data</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="s2">&quot;\n&quot;</span><span class="p">);</span>
-                <span class="nx">data</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">item</span><span class="p">,</span> <span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="nx">bus_routes</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">item</span><span class="p">);</span>
-                <span class="p">});</span>
-
-        <span class="nx">bus_routes</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">route</span><span class="p">,</span> <span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
-            <span class="kd">var</span> <span class="nx">rou</span> <span class="o">=</span> <span class="nx">route</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="s1">&#39;，&#39;</span><span class="p">);</span>
-            <span class="kd">var</span> <span class="nx">driving</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AMap</span><span class="p">.</span><span class="nx">Driving</span><span class="p">({</span>
-                <span class="nx">map</span><span class="o">:</span> <span class="nx">map</span><span class="p">,</span>
-                <span class="c1">// outlineColor:&quot;red&quot;,</span>
-            <span class="p">});</span>
-
-            <span class="kd">var</span> <span class="nx">points</span><span class="o">=</span><span class="p">[];</span>
-            <span class="nx">rou</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">item</span><span class="p">,</span><span class="nx">index</span><span class="p">){</span>
-                <span class="k">if</span><span class="p">(</span><span class="nx">index</span><span class="p">){</span>
-                    <span class="nx">points</span><span class="p">.</span><span class="nx">push</span><span class="p">({</span><span class="nx">keyword</span><span class="o">:</span><span class="nx">item</span><span class="p">,</span><span class="nx">city</span><span class="o">:</span><span class="s2">&quot;上海&quot;</span><span class="p">});</span>
-                <span class="p">}</span>
-            <span class="p">});</span>
-            <span class="nx">p</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">points</span><span class="p">);</span>
-            <span class="nx">driving</span><span class="p">.</span><span class="nx">search</span><span class="p">(</span><span class="nx">points</span><span class="p">);</span>
-            <span class="nx">busRouteArray</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">driving</span><span class="p">);</span>
-        <span class="p">});</span>
-    <span class="p">});</span>
-<span class="p">}</span>
-</pre></div>
-
-
 <h1>具体代码</h1>
 <p>假如你看到了这里，那说明你对于技术有一定的兴趣。爬取页面的大致思路和高德地图 API 的使用方法如上文所述，具体的代码要复杂一些，可以到我的<a href="https://github.com/starshineee/house_renting_map_with_bus">github页面</a>上去下载。</p>
 <p>由于 chrome 对文件访问的限制，我们直接点击 index.html 打开后是无法读取文件中的信息的。对此我们需要在 index.html 同目录下打开 cmd 窗口并键入</p>
