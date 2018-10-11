@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="chinese (simplified)">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>租房地图 | Starshineee 的个人博客
+</title>
+  <link rel="canonical" href="https://starshineee.github.io/posts/pa-chong/houseRenting_busRoute/index.html">
+
+
+  <link rel="stylesheet" href="https://starshineee.github.io/theme/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://starshineee.github.io/theme/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://starshineee.github.io/theme/css/pygments/default.min.css">
+  <link rel="stylesheet" href="https://starshineee.github.io/theme/css/theme.css">
+
+
+<meta name="description" content="爬取链家上的租房信息，并利用高德地图的 API 将其与自定义的巴士路线显示到地图中。">
+  <script>
+    (function(i, s, o, g, r, a, m) {
+      i['GoogleAnalyticsObject'] = r;
+      i[r] = i[r] || function() {
+        (i[r].q = i[r].q || []).push(arguments)
+      }, i[r].l = 1 * new Date();
+      a = s.createElement(o);
+      a.async = 1;
+      a.src = g;
+      m = s.getElementsByTagName(o)[0];
+      m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+    ga('create', 'UA-124959139-1', 'auto');
+    ga('send', 'pageview');
+  </script>
+
+
+</head>
+
+<body>
+  <header class="header">
+    <div class="container">
+<div class="row">
+  <div class="col-sm-12">
+    <h1 class="title"><a href="https://starshineee.github.io/">Starshineee 的个人博客</a></h1>
+      <ul class="list-inline">
+          <li class="list-inline-item"><a href="https://github.com/starshineee" target="_blank">我的Github</a></li>
+      </ul>
+  </div>
+</div>    </div>
+  </header>
+
+  <div class="main">
+    <div class="container">
+      <h1>租房地图
+</h1>
+      <hr>
+<article class="article">
+  <header>
+    <ul class="list-inline">
+      <li class="list-inline-item text-muted" title="2018-07-21T09:15:00+08:00">
+        <i class="fa fa-clock-o"></i>
+        周六 21 七月 2018
+      </li>
+      <li class="list-inline-item">
+        <i class="fa fa-folder-open-o"></i>
+        <a href="https://starshineee.github.io/category/pa-chong.html">爬虫</a>
+      </li>
+      <li class="list-inline-item">
+        <i class="fa fa-user-o"></i>
+        <a href="https://starshineee.github.io/author/starshineee.html">starshineee</a>      </li>
+      <li class="list-inline-item">
+        <i class="fa fa-files-o"></i>
+        <a href="https://starshineee.github.io/tag/pa-chong.html">#爬虫</a>,         <a href="https://starshineee.github.io/tag/fang-shi.html">#房市</a>      </li>
+    </ul>
+  </header>
+  <div class="content">
+    <h1>Motivation</h1>
+<p>前一阶段有租房的需求，但我希望在一些特定的班车线路附近租到价位合适的房子。在将一些租房信息爬取下来之后，我利用高德地图提供的 API 将租房点与班车线路直观地显示在了地图中，如下图所示。</p>
+<p><img alt="house_renting map" height="50%" src="https://starshineee.github.io/images/houseRentingMap.PNG" width="60%">
+使用者可以通过修改 bus.txt 来自定义自己所需的班车线路。图中绿线表示班车线路的一个示例，蓝点表示出租房子的小区。把鼠标移到小蓝点上可以看到出租房子的价格、面积等信息。</p>
+<h1>爬虫思路</h1>
+<p>对于链家页面的爬取较为容易。首先打开链家租房页面并选择筛选条件，如下图可看到对应的 url 链接遵循着较强的规律。
+<img alt="lianjia page" height="50%" src="https://starshineee.github.io/images/lianjia.PNG" width="60%">
+再利用 F12 可以看到我们需要的信息都在特定的标签内，于是我们可以通过下列代码将信息爬取并放入 csv 文件中。</p>
+<div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">page</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">pageNum</span><span class="p">):</span>
+    <span class="n">html</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s1">&#39;https://sh.lianjia.com/zufang/pudong/pg{}rp2rp3/&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">page</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span><span class="o">.</span><span class="n">content</span>
+    <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">html</span><span class="p">,</span> <span class="s1">&#39;html.parser&#39;</span><span class="p">)</span>
+    <span class="n">infos</span> <span class="o">=</span> <span class="n">soup</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s1">&#39;.house-lst&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s1">&#39;li&#39;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">infos</span><span class="p">:</span>
+        <span class="n">dataId</span> <span class="o">=</span> <span class="n">info</span><span class="p">[</span><span class="s1">&#39;data-id&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">dataId</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">idSet</span><span class="p">):</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;span&#39;</span><span class="p">,</span> <span class="n">class_</span><span class="o">=</span><span class="s1">&#39;region&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="n">zone</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;span&#39;</span><span class="p">,</span> <span class="n">class_</span><span class="o">=</span><span class="s1">&#39;zone&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="n">size</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;span&#39;</span><span class="p">,</span> <span class="n">class_</span><span class="o">=</span><span class="s1">&#39;meters&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="n">price</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s1">&#39;span&#39;</span><span class="p">,</span> <span class="n">class_</span><span class="o">=</span><span class="s1">&#39;num&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="n">csv_writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span><span class="n">dataId</span><span class="o">+</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">zone</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">price</span><span class="p">])</span>
+            <span class="n">idSet</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dataId</span><span class="p">)</span>
+</pre></div>
+
+
+<h1>高德地图 API 使用</h1>
+<p>本文的重点在于对高德地图所提供 API 的调用。推荐使用 <a href="https://lbs.amap.com/api/javascript-api/summary">JS API</a>，不限制每天的调用次数。</p>
+<p>首先，遵循<a href="https://lbs.amap.com/api/javascript-api/guide/abc/prepare">官方文档</a>的指示，注册开发者账户得到 key，并在自己的页面中插入 JS 脚本。</p>
+<div class="highlight"><pre><span></span><span class="p">&lt;</span><span class="nt">script</span> <span class="na">type</span><span class="o">=</span><span class="s">&quot;text/javascript&quot;</span> <span class="na">src</span><span class="o">=</span><span class="s">&quot;https://webapi.amap.com/maps?v=1.4.10&amp;key=您申请的key值&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">script</span><span class="p">&gt;</span> 
+</pre></div>
+
+
+<p>然后，</p>
+<ol>
+<li>利用 JS 脚本新建 Map 对象，并设置属性</li>
+</ol>
+<div class="highlight"><pre><span></span><span class="kd">var</span> <span class="nx">map</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AMap</span><span class="p">.</span><span class="nx">Map</span><span class="p">(</span><span class="s2">&quot;container&quot;</span><span class="p">,</span> <span class="p">{</span>
+        <span class="nx">resizeEnable</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+        <span class="nx">zoomEnable</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+        <span class="nx">center</span><span class="o">:</span> <span class="p">[</span><span class="mf">121.586883</span><span class="p">,</span> <span class="mf">31.197304</span><span class="p">],</span>
+        <span class="nx">zoom</span><span class="o">:</span> <span class="mi">13</span>
+    <span class="p">});</span>
+</pre></div>
+
+
+<ol>
+<li>利用 API，通过链家上爬取的小区名字得到其坐标位置，并以点的形式显示到地图上。</li>
+</ol>
+<div class="highlight"><pre><span></span><span class="kd">var</span> <span class="nx">geocoder</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AMap</span><span class="p">.</span><span class="nx">Geocoder</span><span class="p">({</span>
+                <span class="nx">city</span><span class="o">:</span> <span class="s2">&quot;上海&quot;</span><span class="p">,</span>
+                <span class="nx">radius</span><span class="o">:</span> <span class="mi">1500</span>
+            <span class="p">});</span>
+<span class="nx">geocoder</span><span class="p">.</span><span class="nx">getLocation</span><span class="p">(</span><span class="nx">address</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">status</span><span class="p">,</span> <span class="nx">result</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">status</span> <span class="o">===</span> <span class="s2">&quot;complete&quot;</span> <span class="o">&amp;&amp;</span> <span class="nx">result</span><span class="p">.</span><span class="nx">info</span> <span class="o">===</span> <span class="s1">&#39;OK&#39;</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="nx">geocode</span> <span class="o">=</span> <span class="nx">result</span><span class="p">.</span><span class="nx">geocodes</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+
+        <span class="nx">rentMarker</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AMap</span><span class="p">.</span><span class="nx">Marker</span><span class="p">({</span>
+            <span class="nx">map</span><span class="o">:</span> <span class="nx">map</span><span class="p">,</span>
+            <span class="nx">title</span><span class="o">:</span> <span class="nx">address</span><span class="o">+</span><span class="s1">&#39;\n&#39;</span><span class="o">+</span><span class="nx">houseInfo</span><span class="p">,</span>
+            <span class="nx">icon</span><span class="o">:</span> <span class="s1">&#39;http://webapi.amap.com/theme/v1.3/markers/n/mark_b.png&#39;</span><span class="p">,</span>
+            <span class="nx">position</span><span class="o">:</span> <span class="p">[</span><span class="nx">geocode</span><span class="p">.</span><span class="nx">location</span><span class="p">.</span><span class="nx">getLng</span><span class="p">(),</span> <span class="nx">geocode</span><span class="p">.</span><span class="nx">location</span><span class="p">.</span><span class="nx">getLat</span><span class="p">()]</span>
+        <span class="p">});</span>
+        <span class="nx">rentMarkerArray</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">rentMarker</span><span class="p">);</span>
+        <span class="nx">rentMarker</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;click&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">e</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nb">window</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="s2">&quot;https://sh.lianjia.com/zufang/rs&quot;</span><span class="o">+</span><span class="nx">address</span><span class="p">);</span>
+        <span class="p">});</span>
+    <span class="p">}</span>
+
+<span class="p">})</span>
+</pre></div>
+
+
+<ol>
+<li>根据自定义的班车各个站点，即 bus.txt，在地图上显示出其线路。</li>
+</ol>
+<div class="highlight"><pre><span></span><span class="kd">function</span> <span class="nx">loadBusRouteByFile</span><span class="p">(</span><span class="nx">fileName</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">delBusRoute</span><span class="p">();</span>
+            <span class="kd">var</span> <span class="nx">bus_routes</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">Set</span><span class="p">();</span>
+            <span class="nx">$</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">fileName</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+                <span class="nx">data</span> <span class="o">=</span> <span class="nx">data</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="s2">&quot;\n&quot;</span><span class="p">);</span>
+                <span class="nx">data</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">item</span><span class="p">,</span> <span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">bus_routes</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">item</span><span class="p">);</span>
+                <span class="p">});</span>
+
+        <span class="nx">bus_routes</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">route</span><span class="p">,</span> <span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
+            <span class="kd">var</span> <span class="nx">rou</span> <span class="o">=</span> <span class="nx">route</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="s1">&#39;，&#39;</span><span class="p">);</span>
+            <span class="kd">var</span> <span class="nx">driving</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AMap</span><span class="p">.</span><span class="nx">Driving</span><span class="p">({</span>
+                <span class="nx">map</span><span class="o">:</span> <span class="nx">map</span><span class="p">,</span>
+                <span class="c1">// outlineColor:&quot;red&quot;,</span>
+            <span class="p">});</span>
+
+            <span class="kd">var</span> <span class="nx">points</span><span class="o">=</span><span class="p">[];</span>
+            <span class="nx">rou</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">item</span><span class="p">,</span><span class="nx">index</span><span class="p">){</span>
+                <span class="k">if</span><span class="p">(</span><span class="nx">index</span><span class="p">){</span>
+                    <span class="nx">points</span><span class="p">.</span><span class="nx">push</span><span class="p">({</span><span class="nx">keyword</span><span class="o">:</span><span class="nx">item</span><span class="p">,</span><span class="nx">city</span><span class="o">:</span><span class="s2">&quot;上海&quot;</span><span class="p">});</span>
+                <span class="p">}</span>
+            <span class="p">});</span>
+            <span class="nx">p</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">points</span><span class="p">);</span>
+            <span class="nx">driving</span><span class="p">.</span><span class="nx">search</span><span class="p">(</span><span class="nx">points</span><span class="p">);</span>
+            <span class="nx">busRouteArray</span><span class="p">.</span><span class="nx">push</span><span class="p">(</span><span class="nx">driving</span><span class="p">);</span>
+        <span class="p">});</span>
+    <span class="p">});</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h1>具体代码</h1>
+<p>假如你看到了这里，那说明你对于技术有一定的兴趣。爬取页面的大致思路和高德地图 API 的使用方法如上文所述，具体的代码要复杂一些，可以到我的<a href="https://github.com/starshineee/house_renting_map_with_bus">github页面</a>上去下载。</p>
+<p>由于 chrome 对文件访问的限制，我们直接点击 index.html 打开后是无法读取文件中的信息的。对此我们需要在 index.html 同目录下打开 cmd 窗口并键入</p>
+<div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">http</span><span class="o">.</span><span class="n">server</span> <span class="mi">3000</span>
+</pre></div>
+
+
+<p>这样就能在 chrome 中通过 localhost:3000 来访问页面并且选择数据文件，并生成最终的租房地图。</p>
+<p>本博客不定期更新，主要内容为爬虫、大数据、各种小工具等技术问题，欢迎到 github 上 follow 我。</p>
+  </div>
+
+  <div id="container"></div>
+  <link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+  <script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+  <script>
+    var gitment = new Gitment({
+      id: decodeURI(window.location.pathname),
+      owner: 'starshineee',
+      repo: 'starshineee.github.io',
+      oauth: {
+        client_id: '83ce4a7931514df054dc',
+        client_secret: 'eedf908158dfdfd50b796349175b1ce0384f662c',
+      },
+    })
+    gitment.render('container')
+  </script>
+
+
+</article>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+<div class="row">
+  <ul class="col-sm-6 list-inline">
+      <li class="list-inline-item"><a href="https://starshineee.github.io/authors.html">Authors</a></li>
+    <li class="list-inline-item"><a href="https://starshineee.github.io/archives.html">Archives</a></li>
+    <li class="list-inline-item"><a href="https://starshineee.github.io/categories.html">Categories</a></li>
+      <li class="list-inline-item"><a href="https://starshineee.github.io/tags.html">Tags</a></li>
+  </ul>
+  <!-- <p class="col-sm-6 text-sm-right text-muted">
+    Generated by <a href="https://github.com/getpelican/pelican" target="_blank">Pelican</a>
+    / <a href="https://github.com/nairobilug/pelican-alchemy" target="_blank">&#x2728;</a>
+  </p> -->
+</div>    </div>
+  </footer>
+</body>
+
+</html>

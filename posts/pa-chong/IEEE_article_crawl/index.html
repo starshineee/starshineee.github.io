@@ -58,9 +58,9 @@
 <article class="article">
   <header>
     <ul class="list-inline">
-      <li class="list-inline-item text-muted" title="2018-09-12T22:56:01.365502+08:00">
+      <li class="list-inline-item text-muted" title="2018-04-21T09:15:00+08:00">
         <i class="fa fa-clock-o"></i>
-        周三 12 九月 2018
+        周六 21 四月 2018
       </li>
       <li class="list-inline-item">
         <i class="fa fa-folder-open-o"></i>
@@ -76,7 +76,7 @@
   </header>
   <div class="content">
     <h1>Motivation</h1>
-<p>又一次拿到了一列论文的信息，需要从 IEEE 上批量下载。然而大家知道，直接一个个地手动下载是一件很痛苦的事情，于是本人便写了这个爬虫，用于根据 doi 对论文自动下载。一个难点是 IEEE 采用了 ajax 加载页面的方法来防爬虫，如何解决这种问题是本文的主要关注点。</p>
+<p>有一次拿到了一列论文的信息，需要从 IEEE 上批量下载。然而大家知道，直接一个个地手动下载是一件很痛苦的事情，于是本人便写了这个爬虫，用于根据 doi 对论文自动下载。一个难点是 IEEE 采用了 ajax 加载页面的方法来防爬虫，如何解决这种问题是本文的主要关注点。</p>
 <h1>爬虫思路</h1>
 <p>首先需要对 IEEE 网页进行分析，随便打开一个论文可以发现，其中每个论文的 doi 和 article number 是唯一的，而通过 article number 能够得到该论文的下载链接，如下图所示</p>
 <p><img alt="article number in IEEE" height="50%" src="https://starshineee.github.io/images/IEEEArcNumber.PNG" width="60%"></p>
