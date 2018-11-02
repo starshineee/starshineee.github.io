@@ -93,45 +93,55 @@
 <ol>
 <li>安装</li>
 </ol>
-<p><code>shell
-    apt-get install python-pip
-    pip install git+https://github.com/shadowsocks/shadowsocks.git@master</code></p>
+<p>```shell</p>
+<div class="highlight"><pre><span></span>apt-get install python-pip
+pip install git+https://github.com/shadowsocks/shadowsocks.git@master
+</pre></div>
+
+
+<p>```</p>
 <ol>
 <li>编写配置文件</li>
 </ol>
 <p>用 vi 新建文件 /etc/shadowsocks.json，在其中写入</p>
-<p><code>json
-    {
-        "server":"0.0.0.0",
-        "port_password": {
-            "8381": "foobar1",
-            "8382": "foobar2",
-            "8383": "foobar3",
-            "8384": "foobar4"
-        },
-        "local_address": "127.0.0.1",
-        "local_port":1080,
-        "timeout":300,
-        "method":"aes-256-cfb",
-        "fast_open": false
-    }</code></p>
+<p>```json</p>
+<div class="highlight"><pre><span></span>{
+    &quot;server&quot;:&quot;0.0.0.0&quot;,
+    &quot;port_password&quot;: {
+        &quot;8381&quot;: &quot;foobar1&quot;,
+        &quot;8382&quot;: &quot;foobar2&quot;,
+        &quot;8383&quot;: &quot;foobar3&quot;,
+        &quot;8384&quot;: &quot;foobar4&quot;
+    },
+    &quot;local_address&quot;: &quot;127.0.0.1&quot;,
+    &quot;local_port&quot;:1080,
+    &quot;timeout&quot;:300,
+    &quot;method&quot;:&quot;aes-256-cfb&quot;,
+    &quot;fast_open&quot;: false
+}
+</pre></div>
+
+
+<p>```</p>
 <p>上述配置是一个多用户配置，通过在 port_password 里添加键值对可以设定多个对外端口。通过对其中某些端口限速，即可以达到多用户访问控制的效果。</p>
 <ol>
 <li>运行 shadowsocks server</li>
 </ol>
 <p>通过下面指令可以在后台启动或关闭 ss server</p>
-<p><code>shell
-   ssserver -c /etc/shadowsocks.json -d start
-   ssserver -c /etc/shadowsocks.json -d stop</code></p>
+<p>```shell</p>
+<p>ssserver -c /etc/shadowsocks.json -d start
+   ssserver -c /etc/shadowsocks.json -d stop</p>
+<p>```</p>
 <p>/etc/rc.local 是一个 ubuntu 中开机后会自动执行的脚本。我们可以将开启 ss server 的指令添加到其中 "exit 0" 语句前面，以令其开机自动启动。</p>
 <ol>
 <li>利用 iptables 控制网络速度</li>
 </ol>
 <p>一般 VPS 都会有流量限制，对于 AWS 免费套餐来说，流量限制更是达到了上传和下载各 15G 之少。这时如果要分给多人用的话，就需要控制某些端口的访问速度。这个功能可以通过 iptables 来实现。</p>
-<p>```shell
-    iptables -A INPUT -p tcp --sport 8384 -m limit --limit 100/s -j ACCEPT
-    iptables -A INPUT -p tcp --sport 8384 -j DROP</p>
-<div class="highlight"><pre><span></span>iptables -A OUTPUT -p tcp --sport 8384 -m limit --limit 100/s -j ACCEPT
+<p>```shell</p>
+<div class="highlight"><pre><span></span>iptables -A INPUT -p tcp --sport 8384 -m limit --limit 100/s -j ACCEPT
+iptables -A INPUT -p tcp --sport 8384 -j DROP
+
+iptables -A OUTPUT -p tcp --sport 8384 -m limit --limit 100/s -j ACCEPT
 iptables -A OUTPUT -p tcp --sport 8384 -j DROP
 
 iptables -A FORWARD -p tcp --sport 8384 -m limit --limit 100/s -j ACCEPT
